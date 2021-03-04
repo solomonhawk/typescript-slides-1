@@ -1,0 +1,546 @@
+import { Header, Steps, Notes, themes as mdxThemes } from "mdx-deck"
+import { CodeSurferColumns, Step, CodeSurfer } from "code-surfer"
+import { vsDark } from "@code-surfer/themes"
+import {mergeDeep} from './utils'
+
+export const theme = mergeDeep(mdxThemes.dark, {
+  colors: {
+    background: '#111',
+  },
+  styles: {
+    a: {
+      color: '#0088FF'
+    }
+  }
+})
+
+export const customTheme = mergeDeep(vsDark, {
+  styles: {
+    CodeSurfer: {
+      pre: {
+        backgroundColor: "transparent"
+      },
+      code: {
+        backgroundColor: "transparent"
+      }
+    }
+  }
+})
+
+<Header>
+
+  ### Typescript Beyond the Basics
+
+</Header>
+
+# Hi
+
+---
+
+# What are we going to talk about?
+
+<Steps>
+
+- ADTs
+- type vs interface shallow dive
+- generics
+- mapped types
+
+</Steps>
+
+<Notes>
+
+Understanding how to use these last 2 features unlocks a ton of expressiveness within the type system.
+
+</Notes>
+
+
+---
+
+
+# Algebraic Data Types (ADTs)
+
+<Steps>
+
+- [ADT](https://en.wikipedia.org/wiki/Algebraic_data_type) - type formed by combining other types
+- Most commonly:
+  - product types (tuples, records)
+  - sum types (tagged/discriminated/disjoint unions)
+- Definitions rooted in category theory
+
+</Steps>
+
+---
+
+<CodeSurfer theme={customTheme}>
+
+```ts
+type Event =
+    | { kind: "click", target: HTMLElement }
+    | { kind: "input", target: HTMLElement, value: string }
+    | { kind: "scroll", delta: number }
+```
+
+</CodeSurfer>
+
+---
+
+<div style={{ maxWidth: "80%" }}>
+<CodeSurferColumns themes={[customTheme, customTheme]}>
+
+<Step title="type vs interface">
+
+```ts
+type Label = string
+type Value = Label | number
+```
+
+```ts
+interface Props {
+  title: Title
+  children: React.ReactChildren
+}
+```
+
+</Step>
+
+<Step title="type vs interface">
+
+```ts
+type Label = string
+type Value = Label | number
+
+type Props = {
+  title: Title,
+  children: React.ReactChildren
+}
+```
+
+```ts
+interface Props {
+  title: Title
+  children: React.ReactChildren
+}
+
+interface FooProps extends Props {
+  subtitle: string
+}
+```
+
+</Step>
+
+</CodeSurferColumns>
+</div>
+
+<Notes>
+
+- `type` is used to create a **type alias** (it can describe any type)
+- `interface` is used to specify the shape of objects (it can describe object types)
+- You can `extends` and `implements` an `interface`, by not a `type` which means they play nicely with `class`es.
+- Usually it's pretty clear when you need to reach for `type` - if you're expressing a constraint that's anything other than some object shape, otherwise use an `interface`.
+
+</Notes>
+
+
+---
+
+# Generics
+
+https://www.typescriptlang.org/docs/handbook/generics.html
+
+---
+
+<CodeSurfer theme={vsDark}>
+
+```ts
+// It helps me to think of a type that contains a generic
+// as a "function" and the generics as the "parameters"
+type Maybe<T> = T | undefined | null
+```
+
+```ts
+// It helps me to think of a type that contains a generic
+// as a "function" and the generics as the "parameters"
+type Maybe<T> = T | undefined | null
+
+// NOT A REAL TRANSLATION, but helpful for mental modeling (compile time)
+function maybe(type) {
+  return type || undefined || null
+}
+```
+
+```ts
+// It helps me to think of a type that contains a generic
+// as a "function" and the generics as the "parameters"
+type Maybe<T> = T | undefined | null
+
+// NOT A REAL TRANSLATION, but helpful for mental modeling (compile time)
+function maybe(type) {
+  return type || undefined || null
+}
+
+// contrived example usage
+function maybeIncUnknownNumber(x: unknown): Maybe<number> {
+  if (!isNaN(x) && isFinite(x)) {
+    return x + 1
+  }
+}
+```
+
+</CodeSurfer>
+
+<Notes>
+
+in practice you probably wouldn't do this exact kind of thing (avoid `unknown` as much as possible)
+
+</Notes>
+
+
+---
+
+
+# Mapped Types
+
+https://www.typescriptlang.org/docs/handbook/advanced-types.html#mapped-types
+
+<Steps>
+
+- not necessarily intuitive
+- syntax is kind of complicated
+- allows for types to be derived in complex ways from other types
+- helps create reusable "higher-order" types
+
+</Steps>
+
+
+---
+
+<CodeSurferColumns sizes={[1, 2]} themes={[customTheme, customTheme]}>
+
+<Step title="Mapped Types">
+
+```ts
+// some types to work with
+
+type Role = "dev" | "fed"
+type Level = "jr" | "mid" | "sr"
+
+interface Developer {
+  name: string
+  role: Role
+  level: Level
+}
+```
+
+```ts
+// Mapped Type examples
+```
+
+</Step>
+
+<Step title="Mapped Types">
+
+```ts
+// some types to work with
+
+type Role = "dev" | "fed"
+type Level = "jr" | "mid" | "sr"
+
+interface Developer {
+  name: string
+  role: Role
+  level: Level
+}
+```
+
+```ts
+// Mapped Type examples
+
+// Partial takes a type and makes all fields optional
+
+type Partial<T> = {
+  [P in keyof T]?: T[P]
+}
+
+Partial<Developer>
+// { name?: string, role?: Role, level?: Level }
+```
+
+</Step>
+
+<Step title="Mapped Types">
+
+```ts
+// some types to work with
+
+type Role = "dev" | "fed"
+type Level = "jr" | "mid" | "sr"
+
+interface Developer {
+  name: string
+  role: Role
+  level: Level
+}
+```
+
+```ts
+// Mapped Type examples
+
+// Partial takes a type and makes all fields optional
+
+type Partial<T> = {
+  [P in keyof T]?: T[P]
+}
+
+Partial<Developer>
+// { name?: string, role?: Role, level?: Level }
+
+
+
+// Pick takes a type and returns a new type by
+// selecting a subset of the keys and their types
+
+type Pick<T, K extends keyof any> = {
+  [P in K]: T[P]
+}
+
+Pick<Developer, 'name' | 'role'>
+// { name: string, role: Role }
+```
+
+</Step>
+
+<Step title="Mapped Types">
+
+```ts
+// some types to work with
+
+type Role = "dev" | "fed"
+type Level = "jr" | "mid" | "sr"
+
+interface Developer {
+  name: string
+  role: Role
+  level: Level
+}
+```
+
+```ts
+// Mapped Type examples
+
+// Partial takes a type and makes all fields optional
+
+type Partial<T> = {
+  [P in keyof T]?: T[P]
+}
+
+Partial<Developer>
+// { name?: string, role?: Role, level?: Level }
+
+
+
+// Pick takes a type and returns a new type by
+// selecting a subset of the keys and their types
+
+type Pick<T, K extends keyof any> = {
+  [P in K]: T[P]
+}
+
+Pick<Developer, 'name' | 'role'>
+// { name: string, role: Role }
+
+
+
+// Exclude takes a union and filters values out of it
+
+type Exclude<T, U> = T extends U ? never : T
+
+Exclude<keyof Developer, 'name' | 'role'>
+// 'level'
+```
+
+</Step>
+
+<Step title="Mapped Types">
+
+```ts
+// some types to work with
+
+type Role = "dev" | "fed"
+type Level = "jr" | "mid" | "sr"
+
+interface Developer {
+  name: string
+  role: Role
+  level: Level
+}
+```
+
+```ts
+// Mapped Type examples
+
+// Partial takes a type and makes all fields optional
+
+type Partial<T> = {
+  [P in keyof T]?: T[P]
+}
+
+Partial<Developer>
+// { name?: string, role?: Role, level?: Level }
+
+
+
+// Pick takes a type and returns a new type by
+// selecting a subset of the keys and their types
+
+type Pick<T, K extends keyof any> = {
+  [P in K]: T[P]
+}
+
+Pick<Developer, 'name' | 'role'>
+// { name: string, role: Role }
+
+
+
+// Exclude takes a union and filters values out of it
+
+type Exclude<T, U> = T extends U ? never : T
+
+Exclude<keyof Developer, 'name' | 'role'>
+// 'level'
+
+
+
+// Omit takes a type and a list of keys to exclude and
+// returns a new type with those keys and types omitted.
+// Omit is defined by composing `Pick` and `Exclude`!
+
+type Omit<T, K extends keyof any> = Pick<T, Exclude<keyof T, K>>
+
+Omit<Developer, 'name'>
+// { role: Role, level: Level }
+```
+
+</Step>
+
+</CodeSurferColumns>
+
+
+---
+
+
+<CodeSurfer theme={customTheme}>
+
+```ts title="Real(ish) Example"
+type DevRecord = {
+  id: string
+  dev: Developer
+}
+
+// dont require caller to pass entire record in, get it by id
+function update(record: DevRecord, developer?: Developer) {
+  const r = get(record.id)
+
+  // ...
+}
+```
+
+</CodeSurfer>
+
+---
+
+"I need a type which is a `DevRecord` with all fields optional _except_ `id`."
+
+---
+
+<CodeSurfer theme={customTheme}>
+
+```ts
+  type Required<T, K extends keyof T> = {
+    [P in Extract<keyof T, K>]: T[P]
+  } & Partial<T>
+```
+
+</CodeSurfer>
+
+<Notes>
+
+  types of the fields in T as specified in K, expressed as required (no `?`)
+
+  combined w/ all of T but with all fields optional
+
+</Notes>
+
+---
+
+<CodeSurfer theme={customTheme}>
+
+```ts 1
+  type Required<T, K extends keyof T> = {
+    [P in Extract<keyof T, K>]: T[P]
+  } & Partial<T>
+```
+
+</CodeSurfer>
+
+<Notes>
+
+  this line specifies the type and the "arguments" which are different generics
+
+</Notes>
+
+---
+
+<CodeSurfer theme={customTheme}>
+
+```ts 2
+  type Required<T, K extends keyof T> = {
+    [P in Extract<keyof T, K>]: T[P]
+  } & Partial<T>
+```
+
+</CodeSurfer>
+
+<Notes>
+
+  this line maps over the keys in K and types in T, merging those rules as required into the new type
+
+</Notes>
+
+---
+
+<CodeSurfer theme={customTheme}>
+
+```ts 3
+  type Required<T, K extends keyof T> = {
+    [P in Extract<keyof T, K>]: T[P]
+  } & Partial<T>
+```
+
+</CodeSurfer>
+
+<Notes>
+
+  this line marks all fields in T optional, and merges that into the final type
+
+</Notes>
+
+
+---
+
+
+# That's it for now
+
+If you want to see a more complex example w/ some ok comments [check out this TS playground](https://www.typescriptlang.org/play?#code/KYOwrgtgBAMsAu9gCcoG8BQVtQIJQF4oByAQ2IBoscAhQkgI0uuwGF7iBjYjAXwwwBLEEmQAzUp2B4AygAtSAB2mYcUUgC4oAZ3jJhAcz4DhoiVKg15SlSygMt4CAxTGhIlOemtry9Hc0dPUM7TkcwABsIt3gATz9faSJcRKgAH0tUjJ8FZRMPcUlpOEQUABUAe1TgAA8kEAATbSgAJWBOCuQGgB4S0QooRIA+fzUAbT6UADpcAF0tFNzgOwmEUSmaecyllcnkKdYtnJs3AHpT9SioAGtgWOaKsSgwEEEKkAHkUng5FCgf0ggKCPKCmFDadrwN4gDBxPwAaTuAHkxN0yiMiGUoLV6k0oFiAPw3O4grGOYAAN1csPi0gAEqRtAAxQTACI9agwbF1UB4vYDNTYc6wNbTfAZPYbdIi0r7dgACggpFiLlBIA6yGQkPU2m0kEUUPeAEpqPDubjmojYijusMBsLtBUINIQO8ALTACAG2JQCKCXTAp63e7-BTwKAQMABpTKUioYTqcMRYCM8PvaSJDAY9BQCZqmWiLZmnG8y3I1F7SqJCazEZErnkqmoXg1gTCn7+0HNWqSeARH0AA0lNAH9napCj0isSy7oek737Ohn8AqUAUVPUUDErPZUAHDAHNL8ldp2gA6oIfnQiAzmTuevzGMQhhhhYK1AA9L9un9utcVJsIwqSc1xQaQVx0YBwNpNsLg7ZpOyHUV9nFAtplYUcXE4CcIVkGdAQaKBjj8BgKh+NdSA3YBL1+VAyGIYE6O4I9imQspTwvH5cCRZB2BvRkWTZB9kIGejpS4Z9Xwud8cC-D9fz-OQAL+CBgNw2jwNXCFoLyWCxwiCoAHdZ1IKADFAFBSD9AAvYBCKbbRoSgeUGDAcMtQARzAQQtWaVStTMiz9E4ZoINVbRlE4QRtzsxM5ygbCrkcpATRYqAAHFb0E9lumoABRc1SyCfQQAMaUnBcZB7QuUBIEY55XneQNisMU4Kr+P1RCs7RqAAVQFGTBsG4VAR9OFwLDdQgQK7CgSVRR-gqagAFlCsaZo2g1Ho8oGXqhgGqBhXmxRDC3ZAnSgAqIN6001rxK0bT2g61AdJ0XXdT1vV9f00yDO5QsmyNo0UWN4yBb5fRTAN00GHZszQXMsQTPKizustrVRZaxjKWsoCJMkoBASk-hbFGBHGtDkHY5RzxomgACZ6EygT716ETYZsAZKyqJZRKYF8KZPGnOLkbjeMZohmbvIS2dlAZEi5tiec5khyHE7ghiAA)
+
+
+---
+
+
+### Further Reading
+- [TypeScript Docs](https://www.typescriptlang.org/docs/)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
+- [Generics](https://www.typescriptlang.org/docs/handbook/generics.html)
+- [Mapped Types](https://www.typescriptlang.org/docs/handbook/advanced-types.html#mapped-types)
+- ["Designing with types: Making illegal states unrepresentable" - Scott Wlaschin](https://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/)
+- ["Making Impossible States Impossible" - Richard Feldman](https://www.youtube.com/watch?v=IcgmSRJHu_8)

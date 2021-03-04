@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "start": "mdx-deck slides.mdx",
+    "postinstall": "patch-package"
+  },
+  "devDependencies": {
+    "@code-surfer/themes": "^3.1.1",
+    "code-surfer": "^3.1.1",
+    "mdx-deck": "4.0.0",
+    "patch-package": "^6.4.5",
+    "postinstall-postinstall": "^2.1.0",
+    "theme-ui": "^0.3.5"
+  }
+}
