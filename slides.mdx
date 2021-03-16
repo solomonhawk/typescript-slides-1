@@ -44,6 +44,7 @@ export const customTheme = mergeDeep(vsDark, {
 - ADTs
 - type vs interface shallow dive
 - generics
+- conditional types
 - mapped types
 
 </Steps>
@@ -88,11 +89,17 @@ type Event =
 <div style={{ maxWidth: "80%" }}>
 <CodeSurferColumns themes={[customTheme, customTheme]}>
 
+
 <Step title="type vs interface">
 
 ```ts
 type Label = string
 type Value = Label | number
+
+type Props = {
+  title: Title,
+  children: React.ReactChildren
+}
 ```
 
 ```ts
@@ -114,6 +121,8 @@ type Props = {
   title: Title,
   children: React.ReactChildren
 }
+
+type FooProps = Props & { subtitle: string }
 ```
 
 ```ts
@@ -146,7 +155,7 @@ interface FooProps extends Props {
 
 # Generics
 
-https://www.typescriptlang.org/docs/handbook/generics.html
+[docs](https://www.typescriptlang.org/docs/handbook/generics.html)
 
 ---
 
@@ -198,10 +207,55 @@ in practice you probably wouldn't do this exact kind of thing (avoid `unknown` a
 
 ---
 
+# Conditional Types
+
+[docs](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html)
+
+---
+
+<CodeSurfer theme={customTheme}>
+
+```ts title="Conditional Types"
+interface Animal {
+  live(): void;
+}
+interface Dog extends Animal {
+  woof(): void;
+}
+
+type Example1 = Dog extends Animal ? number : string;
+//   ^ = type Example1 = number
+
+type Example2 = RegExp extends Animal ? number : string;
+//   ^ = type Example2 = string
+```
+
+</CodeSurfer>
+
+---
+
+# Distributive Conditional Types
+
+[docs](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types)
+
+---
+
+<CodeSurfer theme={customTheme}>
+
+```ts title="Conditional Types"
+type ToArray<Type> = Type extends any ? Type[] : never;
+
+type StrArrOrNumArr = ToArray<string | number>;
+//   ^ = type StrArrOrNumArr = string[] | number[]
+```
+
+</CodeSurfer>
+
+---
 
 # Mapped Types
 
-https://www.typescriptlang.org/docs/handbook/advanced-types.html#mapped-types
+[docs](https://www.typescriptlang.org/docs/handbook/advanced-types.html#mapped-types)
 
 <Steps>
 
@@ -212,6 +266,14 @@ https://www.typescriptlang.org/docs/handbook/advanced-types.html#mapped-types
 
 </Steps>
 
+
+<Notes>
+
+  Conditional types in which the checked type is a naked type parameter are called distributive conditional types.
+
+  naked type parameters distribute over a union, meaning the conditional is called for each member in the union and the resulting types are returned as a union
+
+</Notes>
 
 ---
 
@@ -425,13 +487,24 @@ Omit<Developer, 'name'>
 
 </CodeSurferColumns>
 
-
 ---
 
+<CodeSurferColumns sizes={[1]} themes={[customTheme]}>
 
-<CodeSurfer theme={customTheme}>
+<Step>
 
-```ts title="Real(ish) Example"
+```ts
+type DevRecord = {
+  id: string
+  dev: Developer
+}
+```
+
+</Step>
+
+<Step>
+
+```ts
 type DevRecord = {
   id: string
   dev: Developer
@@ -445,7 +518,30 @@ function update(record: DevRecord, developer?: Developer) {
 }
 ```
 
-</CodeSurfer>
+</Step>
+
+<Step>
+
+```ts
+type DevRecord = {
+  id: string
+  dev: Developer
+}
+
+// dont require caller to pass entire record in, get it by id
+function update(record: DevRecord, developer?: Developer) {
+  const r = get(record.id)
+
+  // ...
+}
+
+update({ id: 'abc' })
+// Error: type { id: string } is not assignable to type DevRecord
+```
+
+</Step>
+
+</CodeSurferColumns>
 
 ---
 
@@ -531,7 +627,7 @@ function update(record: DevRecord, developer?: Developer) {
 
 # That's it for now
 
-If you want to see a more complex example w/ some ok comments [check out this TS playground](https://www.typescriptlang.org/play?#code/KYOwrgtgBAMsAu9gCcoG8BQVtQIJQF4oByAQ2IBoscAhQkgI0uuwGF7iBjYjAXwwwBLEEmQAzUp2B4AygAtSAB2mYcUUgC4oAZ3jJhAcz4DhoiVKg15SlSygMt4CAxTGhIlOemtry9Hc0dPUM7TkcwABsIt3gATz9faSJcRKgAH0tUjJ8FZRMPcUlpOEQUABUAe1TgAA8kEAATbSgAJWBOCuQGgB4S0QooRIA+fzUAbT6UADpcAF0tFNzgOwmEUSmaecyllcnkKdYtnJs3AHpT9SioAGtgWOaKsSgwEEEKkAHkUng5FCgf0ggKCPKCmFDadrwN4gDBxPwAaTuAHkxN0yiMiGUoLV6k0oFiAPw3O4grGOYAAN1csPi0gAEqRtAAxQTACI9agwbF1UB4vYDNTYc6wNbTfAZPYbdIi0r7dgACggpFiLlBIA6yGQkPU2m0kEUUPeAEpqPDubjmojYijusMBsLtBUINIQO8ALTACAG2JQCKCXTAp63e7-BTwKAQMABpTKUioYTqcMRYCM8PvaSJDAY9BQCZqmWiLZmnG8y3I1F7SqJCazEZErnkqmoXg1gTCn7+0HNWqSeARH0AA0lNAH9napCj0isSy7oek737Ohn8AqUAUVPUUDErPZUAHDAHNL8ldp2gA6oIfnQiAzmTuevzGMQhhhhYK1AA9L9un9utcVJsIwqSc1xQaQVx0YBwNpNsLg7ZpOyHUV9nFAtplYUcXE4CcIVkGdAQaKBjj8BgKh+NdSA3YBL1+VAyGIYE6O4I9imQspTwvH5cCRZB2BvRkWTZB9kIGejpS4Z9Xwud8cC-D9fz-OQAL+CBgNw2jwNXCFoLyWCxwiCoAHdZ1IKADFAFBSD9AAvYBCKbbRoSgeUGDAcMtQARzAQQtWaVStTMiz9E4ZoINVbRlE4QRtzsxM5ygbCrkcpATRYqAAHFb0E9lumoABRc1SyCfQQAMaUnBcZB7QuUBIEY55XneQNisMU4Kr+P1RCs7RqAAVQFGTBsG4VAR9OFwLDdQgQK7CgSVRR-gqagAFlCsaZo2g1Ho8oGXqhgGqBhXmxRDC3ZAnSgAqIN6001rxK0bT2g61AdJ0XXdT1vV9f00yDO5QsmyNo0UWN4yBb5fRTAN00GHZszQXMsQTPKizustrVRZaxjKWsoCJMkoBASk-hbFGBHGtDkHY5RzxomgACZ6EygT716ETYZsAZKyqJZRKYF8KZPGnOLkbjeMZohmbvIS2dlAZEi5tiec5khyHE7ghiAA)
+If you want to see a more complex example w/ some ok comments [check out this TS playground](https://www.typescriptlang.org/play?ssl=57&ssc=131&pln=57&pc=77#code/C4TwDgpgBAqjCSARKBeKBnYAnAlgOwHMAoUSKAFQiwFt1UNt9iiI8BXaqAYQHs8ATHMBx8oAbyJQp3PsACG+dJRp00Acl555i5bTUAaSdPjoAooPkAjADbR1J80Lk2IBo1ICyc4AGMAFhDoAEqBPGxYPnZQal6+AcGh4ZFqRAC+RET4wFQAZnKRUPCa2nhKVLTi7lDZKgBcFOXoaRlZufnQ8A4WzraV0lAQ3S71ljw8tnJ4zZlabQXwsf6BIehhEdAS-ViJ6-D89XBI06TQmhYieADKfnJkaEWyCqW6dAA+hV1OLlDvC95LCVWSQgLVmWDyBTOQguXjAAwAHtkBHQQj4eFh+AAeKHCPj6GQCaF8a63CAAPj60gA2jiLgA6YpPMoqAC69QeWiZLyqNL45z4dM+VlsbI+ZiGth5tIFi3iKzWkVFfziyx2kWmAHoNVA5NZrFAANYQEB0Hg5KBsPAXfFYbwBLDVG54KBmqCtLDoCA+XFTE5QADSxoA8jlMeQKWhyAikfw6FGAPyG42uqP1PAQABuVAyfoAEnJ0AAxHAQaxYowAGWjrFjBP5eHx-Sb0i1UArEGANTpAEEfm2O12AEJ99udqgMqAACmochAlmg+DRWG23p16HQHDAPoAlEZ-dXkQHg6HpVcbpAyfjW6tqNA8HwALQQahbkBQaw4TAu81Gk2O7xQNQbBfrckByA6+A6sA74QAW0F8NAJKQEQEbiFAVJVpBp6ivuECIjWdCBiAIbYnyRJ4LCGEshSiZVmmmZUFAqRURkrbAH4n5unQeH5MA1hvgABqeDKPDojQCVA84+HIwEdIyYkqFxjrQHw-EYOe0DADwUA3FmOpQDkJZllAAk1LQAkkOApxkT65BWegADqQh+C8xalvw9D5kWRlYqe+JqGZ6BqGSRCts20gAHpRQ+MUPjpPBZg61BhJ6OlUJp2meppVmsdq7GcZxQk2fSQo9NA7zCbKqpAusElSTJqWdOKXy9JMHnKgC8rApJPDsTpch6RAzmMWogwta4LoOmo2w1ZEewpH6p52ZAjnOY4woQEGWBdbsHloF5bllqRhI+v5Y0bWofbTWqEDzSFYXhVAUURbFcV+AljHJbJaXbNUmUQNlyG5ZJpY8AA7kpchQAQrBULqOAAF6DFAiXoBcU6WGw0HbAAjmwOAzYB6LQDD6a4D4dBaSDGCQD4OCGcjAHsdA0l6hgQgQLullkAA4rD5MHT5mJGKYB61pguCEH27DUPOWBXtqrAcJNFpWqIroS0wGoy3L74c7a1hNFIMCNo9ZvNq2kxvn67EAZMUCi9JzoznCWlGB4Ysol66JYqY+IwJe-Sti7YBMAZWA8JwotUzAe6e0exGhgHptNtekd3o+z6vnrX6ur+lM3NBQEgWAYEQc6AETLn6ZQEhIKoWI6FRpBpg4fHREkR4VLkNRUCJqmUDpolTFUq3OZWXW5HLYETnsa5PkAEz0HzZM4D4gvucd9b4qedc78VfCwv5gXBdz1knRc0+rex61lVtO1zfwS9oCvVBrxvR1+ZPPp79-MK3GdCUE13jXVmrdfgwUgA)
 
 
 ---
